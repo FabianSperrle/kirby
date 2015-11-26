@@ -247,19 +247,28 @@ abstract class PagesAbstract extends Collection {
 
   }
 
-  public function groupBy($field, $i = true) {
+  public function group($callback) {
 
     $groups = array();
 
     foreach($this->data as $key => $item) {
 
-      $value = $item->content()->get($field)->value();
+      // get the value to group by
+      $value = call_user_func($callback, $item);
 
       // make sure that there's always a proper value to group by
       if(!$value) throw new Exception('Invalid grouping value for key: ' . $key);
 
-      // ignore upper/lowercase for group names
-      if($i) $value = str::lower($value);
+      // make sure we have a proper key for each group
+      if(is_array($value)) {
+        throw new Exception('You cannot group by arrays or objects');
+      } else if(is_object($value)) {
+        if(!method_exists($value, '__toString')) {
+          throw new Exception('You cannot group by arrays or objects');
+        } else {
+          $value = (string)$value;
+        }
+      }
 
       if(!isset($groups[$value])) {
         // create a new entry for the group if it does not exist yet
